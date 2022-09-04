@@ -11,52 +11,65 @@
 #define FIVE_SECONDS 5000
 #define TWO_SECONDS 2000
 #define THREE_SECONDS 3000
+#define TWO_MICROSECONDS 2
+#define TEN_MICROSECONDS 10
 
 #define ECHO_PIN 2 // attach pin D2 Arduino to pin Echo of HC-SR04
-#define TRIG_PIN 3 //attach pin D3 Arduino to pin Trig of HC-SR04
+#define TRIG_PIN 3 // attach pin D3 Arduino to pin Trig of HC-SR04
 
-// defines variables
-long duration; // variable for the duration of sound wave travel
-int distance; // variable for the distance measurement
+float duration; 
+float distance; // variable for the duration and distance measurement
 
 void redLightCycle(int);
 void yellowLightCycle(int);
 void greenLightCycle(int);
 
+void clearTrigPin(int);
+void activateTrigPin(int);
+
 void setup() 
 {
+    Serial.begin(9600);                                     // Serial Communication is starting with 9600 of baudrate speed
+
  	pinMode(LED_BUILTIN, OUTPUT);                           // initialize digital pin LED_BUILTIN as an output. Same as Pin 13
-    pinMode(LED_PIN_12, OUTPUT);
-    pinMode(LED_PIN_11, OUTPUT);
+    pinMode(LED_PIN_12, OUTPUT);                            // yellow LED
+    pinMode(LED_PIN_11, OUTPUT);                            // green LED
 
     pinMode(TRIG_PIN, OUTPUT);                              // Sets the TRIG_PIN as an OUTPUT
     pinMode(ECHO_PIN, INPUT);                               // Sets the ECHO_PIN as an INPUT
-    Serial.begin(9600);                                     // Serial Communication is starting with 9600 of baudrate speed
-    Serial.println("Ultrasonic Sensor HC-SR04 Test");       // print some text in Serial Monitor
-    Serial.println("with Arduino UNO R3");
 }
 
 void loop() 
-{
-    redLightCycle(FIVE_SECONDS);                            // red light turns on for five seconds
-    yellowLightCycle(TWO_SECONDS);                          // yellow light turns on for two seconds
-    greenLightCtycle(THREE_SECONDS);                        // green light turns on for three seconds      
+{    
+    digitalWrite(LED_BUILTIN, HIGH);                          // red light HIGH until car approaches intersection
 
-    // Clears the TRIG_PIN condition
-    digitalWrite(TRIG_PIN, LOW);
-    delayMicroseconds(2);
-    // Sets the TRIG_PIN HIGH (ACTIVE) for 10 microseconds
+    clearTrigPin(TWO_MICROSECONDS);                           // Clears the TRIG_PIN condition
+    activateTrigPin(TEN_MICROSECONDS);                        // Sets the TRIG_PIN HIGH (ACTIVE) for 10 microseconds
+
+    duration = pulseIn(ECHO_PIN, HIGH);                       // Reads the ECHO_PIN, returns the sound wave travel time in microseconds
+    distance = (duration / 2) * 0.0343;                       // Speed of sound wave divided by 2
+    
+    Serial.print("Distance: ");                               // Displays the distance on the Serial Monitor
+    if (distance <= 50 && distance >= 2)                      // Trigger the stop light functions
+    {
+        Serial.println("Vehicle approaching..."); 
+        redLightCycle(FIVE_SECONDS);                            // red light turns on for five seconds
+        greenLightCycle(THREE_SECONDS);                        // green light turns on for three seconds
+        yellowLightCycle(TWO_SECONDS);                          // yellow light turns on for two seconds
+    } else {
+        Serial.println("Out of range.");                        
+    }
+}
+
+void activateTrigPin(int duration) {
     digitalWrite(TRIG_PIN, HIGH);
     delayMicroseconds(10);
     digitalWrite(TRIG_PIN, LOW);
-    // Reads the ECHO_PIN, returns the sound wave travel time in microseconds
-    duration = pulseIn(ECHO_PIN, HIGH);
-    // Calculating the distance
-    distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
-    // Displays the distance on the Serial Monitor
-    Serial.print("Distance: ");
-    Serial.print(distance);
-    Serial.println(" cm");
+}
+
+void clearTrigPin(int duration) {
+    digitalWrite(TRIG_PIN, LOW);
+    delayMicroseconds(duration);
 }
 
 // function cycles red light
@@ -76,7 +89,7 @@ void yellowLightCycle(int duration)
 }
 
 // function cycles red light
-void greenLightCtycle(int duration)
+void greenLightCycle(int duration)
 {
     digitalWrite(LED_PIN_11, HIGH);  // turn the LED on
  	delay(duration);                                                     
